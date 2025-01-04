@@ -13,14 +13,7 @@ spec:
     image: hashicorp/terraform:1.0.6
     command:
     - cat
-    tty: true
-  nodeSelector:
-    node.kubernetes.io/lifecycle: spot
-  tolerations:
-    - key: lifecycle
-      operator: Equal
-      value: spot
-      effect: NoSchedule  
+    tty: true 
 """
         }
     }
