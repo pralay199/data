@@ -1,69 +1,41 @@
+
 pipeline {
-    agent any
 
-    environment {
-        AWS_REGION = 'us-east-1'
-        TF_VAR_cluster_name = 'example'
-        AWS_ACCESS_KEY_ID = credentials("aws_access_key_id")
-        AWS_SECRET_ACCESS_KEY = credentials("aws_secret_access_key")
+    agent {
+        kubernetes {
+      yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins-pipelines
+  containers:
+  - name: terraform-1-0-6
+    image: hashicorp/terraform:1.0.6
+    command:
+    - cat
+    tty: true
+  nodeSelector:
+    node.kubernetes.io/lifecycle: spot
+  tolerations:
+    - key: lifecycle
+      operator: Equal
+      value: spot
+      effect: NoSchedule  
+"""
+        }
     }
-
     stages {
-        // stage('Checkout Code') {
-        //     steps {
-        //         checkout scm
-        //     }
-        // }
-
-        stage('Setup AWS Credentials') {
+        stage('Terraform Validate') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials-id']]) {
-                    sh 'aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID'
-                    sh 'aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY'
-                    sh 'aws eks update-kubeconfig --region $AWS_REGION --name $TF_VAR_cluster_name'
+                container('terraform-1-0-6') {
+                    dir('deploy') {
+                        echo '*** Initializing Terraform ***'
+                        sh "terraform init -no-color -backend=false"
+                        echo '*** Validating Terraform Code***'
+                        sh "terraform validate"
+                    }
                 }
             }
-        }
-
-
-
-        stage('Terraform Init') {
-            steps {
-                sh 'terraform init'
-            }
-        }
-
-        // stage('Terraform Plan') {
-        //     steps {
-        //         sh 'terraform plan -out=tfplan'
-        //     }
-        // }
-
-        stage('Terraform Apply') {
-            steps {
-                sh 'terraform apply -auto-approve tfplan'
-            }
-        }
-
-        // stage('Deploy to EKS') {
-        //     steps {
-        //         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials-id']]) {
-        //             sh 'aws eks update-kubeconfig --region $AWS_REGION --name $TF_VAR_cluster_name'
-        //             sh 'kubectl apply -f k8s-manifests/'
-        //         }
-        //     }
-        // }
-    }
-
-    post {
-        always {
-            cleanWs()
-        }
-        success {
-            echo 'Deployment succeeded!'
-        }
-        failure {
-            echo 'Deployment failed.'
         }
     }
 }
