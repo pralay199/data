@@ -17,4 +17,17 @@ resource "helm_release" "nginx" {
   depends_on = [kubernetes_namespace.example]
 }
 
+resource "helm_release" "nginx2" {
+  name       = "mynginx1"
+  namespace  = "default" # Ensure the namespace "data2" exists
+  chart      = "../kumar" # Adjust the chart path if necessary
+
+  values = [
+    yamlencode({
+      replicaCount = 1
+    })
+  ]
+}
+
+
 
