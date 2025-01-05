@@ -21,7 +21,7 @@ spec:
         stage('Terraform Validate') {
             steps {
                 container('terraform-1-0-6') {
-                    dir('deploy') {
+                    dir('terraform') {
                         echo '*** Initializing Terraform ***'
                         sh "terraform init -no-color -backend=false"
                         echo '*** Validating Terraform Code***'
