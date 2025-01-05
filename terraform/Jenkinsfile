@@ -30,5 +30,17 @@ spec:
                 }
             }
         }
+        stage('Terraform apply') {
+            steps {
+                container('terraform-1-0-6') {
+                    dir('terraform') {
+                        echo '*** Initializing Terraform ***'
+                        sh "terraform plan -out=plannew"
+                        echo '*** Validating Terraform Code***'
+                        sh "terraform apply 'plannew'"
+                    }
+                }
+            }
+        }
     }
 }
